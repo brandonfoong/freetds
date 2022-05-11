@@ -37,6 +37,7 @@ sub category($) {
 	return qw(BIT BITN) if $_ eq 'BITx';
 	return qw(BINARY VARBINARY IMAGE LONGBINARY XBINARY XVARBINARY) if $_ eq 'BINARYx';
 	return qw(CHAR VARCHAR XCHAR XVARCHAR) if $_ eq 'CHARx';
+	return qw(TABLETYPE) if $_ eq 'TABLETYPEx';
 	return ($_);
 }
 
@@ -132,17 +133,18 @@ print "};\n";
 __DATA__
           To
 From
-            CHARx TEXT BINARYx INTx FLTx NUMERIC DECIMAL BITx MONEYx DATETIMEx BOUNDARY UNIQUE SENSITIVITY
-CHARx       T     T    T       T    T    T       T       T    T      T         T        T      t
-TEXT        T     T    T       T    T    T       T       T    T      T         T        T      t
-BINARYx     T     T    T       T    T    F       F       F    T      F         F        F      F
-INTx        T     T    T       T    T    T       T       T    T      F         F        F      F
-FLTx        T     T    T       T    T    T       T       T    T      F         F        F      F
-NUMERIC     T     T    T       T    T    T       T       T    T      F         F        F      F
-DECIMAL     T     T    T       T    T    T       T       T    T      F         F        F      F
-BITx        T     T    T       T    T    T       T       T    T      F         F        F      F
-MONEYx      T     T    T       T    T    T       T       T    T      F         F        F      F
-DATETIMEx   T     T    T       F    F    F       F       F    F      T         F        F      F
-BOUNDARY    T     T    F       F    F    F       F       F    F      F         T        F      F
-UNIQUE      T     T    T       F    F    F       F       F    F      F         F        T      F
-SENSITIVITY t     t    F       F    F    F       F       F    F      F         F        F      t
+            CHARx TEXT BINARYx INTx FLTx NUMERIC DECIMAL BITx MONEYx DATETIMEx BOUNDARY UNIQUE SENSITIVITY TABLETYPEx
+CHARx       T     T    T       T    T    T       T       T    T      T         T        T      t           F
+TEXT        T     T    T       T    T    T       T       T    T      T         T        T      t           F
+BINARYx     T     T    T       T    T    F       F       F    T      F         F        F      F           F
+INTx        T     T    T       T    T    T       T       T    T      F         F        F      F           F
+FLTx        T     T    T       T    T    T       T       T    T      F         F        F      F           F
+NUMERIC     T     T    T       T    T    T       T       T    T      F         F        F      F           F
+DECIMAL     T     T    T       T    T    T       T       T    T      F         F        F      F           F
+BITx        T     T    T       T    T    T       T       T    T      F         F        F      F           F
+MONEYx      T     T    T       T    T    T       T       T    T      F         F        F      F           F
+DATETIMEx   T     T    T       F    F    F       F       F    F      T         F        F      F           F
+BOUNDARY    T     T    F       F    F    F       F       F    F      F         T        F      F           F
+UNIQUE      T     T    T       F    F    F       F       F    F      F         F        T      F           F
+SENSITIVITY t     t    F       F    F    F       F       F    F      F         F        F      t           F
+TABLETYPEx  F     F    F       F    F    F       F       F    F      F         F        F      F           T
