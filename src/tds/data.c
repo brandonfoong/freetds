@@ -1476,6 +1476,67 @@ tds_sybbigtime_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
 	return TDS_SUCCESS;
 }
 
+/* TODO */
+
+TDSRET
+tds_mstabletype_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	col->column_scale = col->column_prec = 6;
+	tds_get_byte(tds); /* 8, size */
+	tds_get_byte(tds); /* 6, precision ?? */
+	col->on_server.column_size = col->column_size = sizeof(TDS_UINT8);
+	return TDS_SUCCESS;
+}
+
+TDS_INT
+tds_mstabletype_row_len(TDSCOLUMN *col)
+{
+	return sizeof(TDS_UINT8);
+}
+
+TDSRET
+tds_mstabletype_get(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	TDS_UINT8 *dt = (TDS_UINT8 *) col->column_data;
+	int size = tds_get_byte(tds);
+
+	if (size == 0) {
+		col->column_cur_size = -1;
+		return TDS_SUCCESS;
+	}
+
+	col->column_cur_size = sizeof(TDS_UINT8);
+	*dt = tds_get_int8(tds);
+
+	return TDS_SUCCESS;
+}
+
+TDSRET
+tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	tds_put_byte(tds, 8);
+	tds_put_byte(tds, 6);
+	return TDS_SUCCESS;
+}
+
+TDSRET
+tds_mstabletype_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
+{
+	const TDS_UINT8 *dt = (const TDS_UINT8 *) col->column_data;
+
+	if (col->column_cur_size < 0) {
+		tds_put_byte(tds, 0);
+		return TDS_SUCCESS;
+	}
+
+	tds_put_byte(tds, 8);
+	tds_put_int8(tds, *dt);
+
+	return TDS_SUCCESS;
+}
+
+/* END TODO*/
+
 TDSRET
 tds_invalid_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
@@ -1529,6 +1590,27 @@ tds_sybbigtime_check(const TDSCOLUMN *col)
 
 	return 1;
 }
+
+/* TODO */
+
+int
+tds_sybbigtime_check(const TDSCOLUMN *col)
+{
+	assert(col->column_type == col->on_server.column_type);
+	assert(col->on_server.column_size == col->column_size);
+	assert(!is_numeric_type(col->column_type));
+	assert(!is_fixed_type(col->column_type));
+	assert(!is_blob_type(col->column_type));
+	assert(!is_variable_type(col->column_type));
+	assert(is_nullable_type(col->column_type));
+	assert(col->column_varint_size == 1);
+	assert(col->column_prec == 6);
+	assert(col->column_scale == col->column_prec);
+
+	return 1;
+}
+
+/* END TODO */
 
 int
 tds_clrudt_check(const TDSCOLUMN *col)
@@ -1598,6 +1680,7 @@ TDS_DECLARE_FUNCS(msdatetime);
 TDS_DECLARE_FUNCS(clrudt);
 TDS_DECLARE_FUNCS(sybbigtime);
 TDS_DECLARE_FUNCS(invalid);
+TDS_DECLARE_FUNCS(mstabletype);
 #include <freetds/popvis.h>
 
 static const TDSCOLUMNFUNCS *
@@ -1621,6 +1704,8 @@ tds_get_column_funcs(TDSCONNECTION *conn, int type)
 	case SYB5BIGTIME:
 	case SYB5BIGDATETIME:
 		return &tds_sybbigtime_funcs;
+	case SYBTABLETYPE:
+		return &tds_mstabletype_funcs;
 	}
 	return &tds_generic_funcs;
 }
