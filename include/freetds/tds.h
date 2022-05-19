@@ -1324,6 +1324,34 @@ TDSICONV *tds_iconv_from_collate(TDSCONNECTION * conn, TDS_UCHAR collate[5]);
 
 
 /* mem.c */
+
+typedef struct TABLE_METADATA
+{
+	TDS_INT8 usertype;
+	TDS_SMALLINT flags;
+	TDS_CHAR typeinfo;
+	char * name;
+	struct TABLE_METADATA * next;
+} TABLE_METADATA;
+
+typedef struct TABLE_ROW
+{
+	TDSPARAMINFO * params;
+	struct TABLE_ROW * next;
+} TABLE_ROW;
+
+typedef struct TABLE_VALUE
+{
+    char * schema;
+	char * typename;
+	TDS_INT num_cols;
+    TDS_INT num_rows;
+	TABLE_ROW * row;
+	TABLE_METADATA * metadata;
+} TABLE_VALUE;
+
+// const int table_size = sizeof(TABLE_VALUE);
+
 void tds_free_socket(TDSSOCKET * tds);
 void tds_free_all_results(TDSSOCKET * tds);
 void tds_free_results(TDSRESULTINFO * res_info);
