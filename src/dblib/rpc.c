@@ -398,7 +398,7 @@ param_info_alloc(TDSSOCKET * tds, DBREMOTE_PROC * rpc)
 		temp_datalen = p->datalen;
 
 		if (p->datalen == 0)
-			param_is_null = 1; 
+			param_is_null = 1;
 
 		tdsdump_log(TDS_DBG_INFO1, "parm_info_alloc(): parameter null-ness = %d\n", param_is_null);
 
