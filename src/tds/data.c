@@ -1533,8 +1533,8 @@ tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 		tds_put_smallint(tds, metadata->flags);
 
 		// type info - byte
-		tds_put_byte(tds, metadata->typeinfo);
 		tds_col = row->params->columns[i];
+		tds_put_byte(tds, tds_col->on_server.column_type);
 		if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
 			return TDS_FAIL;
 
