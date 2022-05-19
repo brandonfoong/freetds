@@ -1628,19 +1628,9 @@ tds_sybbigtime_check(const TDSCOLUMN *col)
 /* TODO */
 
 int
-tds_sybbigtime_check(const TDSCOLUMN *col)
+tds_tabletype_check(const TDSCOLUMN *col)
 {
-	assert(col->column_type == col->on_server.column_type);
-	assert(col->on_server.column_size == col->column_size);
-	assert(!is_numeric_type(col->column_type));
-	assert(!is_fixed_type(col->column_type));
-	assert(!is_blob_type(col->column_type));
-	assert(!is_variable_type(col->column_type));
-	assert(is_nullable_type(col->column_type));
-	assert(col->column_varint_size == 1);
-	assert(col->column_prec == 6);
-	assert(col->column_scale == col->column_prec);
-
+	// TODO: is this for validating incoming data?
 	return 1;
 }
 
