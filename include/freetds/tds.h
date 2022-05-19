@@ -1342,10 +1342,10 @@ typedef struct TABLE_ROW
 
 typedef struct TABLE_VALUE
 {
-    char * schema;
+	char * schema;
 	char * typename;
 	TDS_INT num_cols;
-    TDS_INT num_rows;
+	TDS_INT num_rows;
 	TABLE_ROW * row;
 	TABLE_METADATA * metadata;
 } TABLE_VALUE;
