@@ -1350,8 +1350,6 @@ typedef struct TABLE_VALUE
 	TABLE_METADATA * metadata;
 } TABLE_VALUE;
 
-// const int table_size = sizeof(TABLE_VALUE);
-
 void tds_free_socket(TDSSOCKET * tds);
 void tds_free_all_results(TDSSOCKET * tds);
 void tds_free_results(TDSRESULTINFO * res_info);
