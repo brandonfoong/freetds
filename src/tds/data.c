@@ -880,6 +880,7 @@ tds_generic_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 	CHECK_COLUMN_EXTRA(col);
 
 	size = tds_fix_column_size(tds, col);
+
 	switch (col->column_varint_size) {
 	case 0:
 		break;
@@ -1481,56 +1482,89 @@ tds_sybbigtime_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
 TDSRET
 tds_mstabletype_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
-	col->column_scale = col->column_prec = 6;
-	tds_get_byte(tds); /* 8, size */
-	tds_get_byte(tds); /* 6, precision ?? */
-	col->on_server.column_size = col->column_size = sizeof(TDS_UINT8);
-	return TDS_SUCCESS;
+	/* Table type is never an output variable */
+	return TDS_FAIL;
 }
 
 TDS_INT
 tds_mstabletype_row_len(TDSCOLUMN *col)
 {
-	return sizeof(TDS_UINT8);
+	return sizeof(TABLE_VALUE);
 }
 
 TDSRET
 tds_mstabletype_get(TDSSOCKET * tds, TDSCOLUMN * col)
 {
-	TDS_UINT8 *dt = (TDS_UINT8 *) col->column_data;
-	int size = tds_get_byte(tds);
-
-	if (size == 0) {
-		col->column_cur_size = -1;
-		return TDS_SUCCESS;
-	}
-
-	col->column_cur_size = sizeof(TDS_UINT8);
-	*dt = tds_get_int8(tds);
-
-	return TDS_SUCCESS;
+	/* Table type is never an output variable */
+	return TDS_FAIL;
 }
 
 TDSRET
 tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
-	tds_put_byte(tds, 8);
-	tds_put_byte(tds, 6);
+	TABLE_VALUE * table = (TABLE_VALUE *) col->column_data;
+
+	tds_put_byte(tds, 0x00);
+	tds_put_string(tds, "", 0); /* Empty DB name */
+	tds_put_byte(tds, strlen(table->schema));
+	tds_put_string(tds, table->schema, -1);
+	tds_put_byte(tds, strlen(table->typename));
+	tds_put_string(tds, table->typename, -1);
+
 	return TDS_SUCCESS;
 }
 
 TDSRET
-tds_mstabletype_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
+tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 {
-	const TDS_UINT8 *dt = (const TDS_UINT8 *) col->column_data;
+	TABLE_VALUE * table = (TABLE_VALUE *) col->column_data;
+	TDSCOLUMN *tds_col;
+	TABLE_ROW * row;
+	TABLE_METADATA * metadata;
+	int i;
 
-	if (col->column_cur_size < 0) {
-		tds_put_byte(tds, 0);
-		return TDS_SUCCESS;
+	/* TVP_COLMETADATA */
+	tds_put_smallint(tds, table->num_cols);
+	// TODO:
+	for (metadata = table->metadata, row = table->row, i = 0; metadata != NULL; metadata = metadata->next, i++) {
+		// usertype - int (dummy val) TODO
+		tds_put_int(tds, metadata->usertype);
+		// column flags - short TODO:
+		tds_put_smallint(tds, metadata->flags);
+
+		// type info - byte
+		tds_put_byte(tds, metadata->typeinfo);
+		tds_col = row->params->columns[i];
+		if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
+			return TDS_FAIL;
+
+		// col name - string -- should be empty
+		tds_put_byte(tds, 0x00);
+		// tds_put_string(tds, metadata->name, strlen(metadata->name));
 	}
 
-	tds_put_byte(tds, 8);
-	tds_put_int8(tds, *dt);
+	/* TODO: Optional tokens? */
+	/* TVP_ORDER_UNIQUE */
+	/* TVP_COLUMN_ORDERING */
+
+	/* TVP_END_TOKEN */
+	tds_put_byte(tds, 0x00);
+
+	/* TVP_ROW */
+	for (row = table->row; row != NULL; row = row->next) {
+		/* TVP_ROW_TOKEN */
+		tds_put_byte(tds, 0x01);
+
+		/* ROW INFORMATION */
+		for (i = 0; i < table->num_cols; i++) {
+			tds_col = row->params->columns[i];
+			if (tds_col->funcs->put_data(tds, tds_col, 0) == TDS_FAIL)
+				return TDS_FAIL;
+		}
+	}
+
+	/* TVP_END_TOKEN */
+	tds_put_byte(tds, 0x00);
 
 	return TDS_SUCCESS;
 }
