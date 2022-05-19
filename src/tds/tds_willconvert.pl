@@ -133,7 +133,7 @@ print "};\n";
 __DATA__
           To
 From
-            CHARx TEXT BINARYx INTx FLTx NUMERIC DECIMAL BITx MONEYx DATETIMEx BOUNDARY UNIQUE SENSITIVITY TABLETYPEx
+            CHARx TEXT BINARYx INTx FLTx NUMERIC DECIMAL BITx MONEYx DATETIMEx BOUNDARY UNIQUE SENSITIVITY TABLETYPE
 CHARx       T     T    T       T    T    T       T       T    T      T         T        T      t           F
 TEXT        T     T    T       T    T    T       T       T    T      T         T        T      t           F
 BINARYx     T     T    T       T    T    F       F       F    T      F         F        F      F           F
@@ -147,4 +147,4 @@ DATETIMEx   T     T    T       F    F    F       F       F    F      T         F
 BOUNDARY    T     T    F       F    F    F       F       F    F      F         T        F      F           F
 UNIQUE      T     T    T       F    F    F       F       F    F      F         F        T      F           F
 SENSITIVITY t     t    F       F    F    F       F       F    F      F         F        F      t           F
-TABLETYPEx  F     F    F       F    F    F       F       F    F      F         F        F      F           T
+TABLETYPE   F     F    F       F    F    F       F       F    F      F         F        F      F           T
