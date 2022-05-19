@@ -204,7 +204,7 @@ typedef enum
 	SYBMSTIME = 41,  	/* 0x29 */
 	SYBMSDATETIME2 = 42,  	/* 0x2a */
 	SYBMSDATETIMEOFFSET = 43,/* 0x2b */
-	SYBTABLETYPE = 143,	/* 0x8F */
+	SYBTABLETYPE = 243,	/* 0xF3 */
 
 /*
  * Sybase only types
