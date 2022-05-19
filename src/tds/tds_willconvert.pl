@@ -37,7 +37,6 @@ sub category($) {
 	return qw(BIT BITN) if $_ eq 'BITx';
 	return qw(BINARY VARBINARY IMAGE LONGBINARY XBINARY XVARBINARY) if $_ eq 'BINARYx';
 	return qw(CHAR VARCHAR XCHAR XVARCHAR) if $_ eq 'CHARx';
-	return qw(TABLETYPE) if $_ eq 'TABLETYPEx';
 	return ($_);
 }
 
