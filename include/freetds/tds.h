@@ -1403,7 +1403,6 @@ void tds_free_bcpinfo(TDSBCPINFO *bcpinfo);
 void tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo);
 
 TABLE_VALUE *tds_alloc_table(char schema[], char typename[], int num_rows);
-#define TABLE_VALUE_SIZE sizeof(struct TABLE_VALUE)
 
 /* login.c */
 void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
