@@ -398,7 +398,12 @@ typedef struct
 } DBCOL2;
 /* end dbcolinfo stuff */
 
+#ifndef SYBDB_H
+#define SYBDB_H
 
+typedef struct TABLE_VALUE TABLE_VALUE;
+
+#endif
 
 /* a large list of options, DBTEXTSIZE is needed by sybtcl */
 #define DBPARSEONLY      0
@@ -903,6 +908,10 @@ STATUS dbsetrow(DBPROCESS * dbprocess, DBINT row);
 RETCODE dbsettime(int seconds);
 void dbsetuserdata(DBPROCESS * dbproc, BYTE * ptr);
 RETCODE dbsetversion(DBINT version);
+
+/* TODO: */
+RETCODE dbrpcbindcolumn(DBPROCESS * dbproc, TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value);
+TABLE_VALUE * dbcreatetable(char schema[], char typename[], int num_rows);
 
 int dbspid(DBPROCESS * dbproc);
 RETCODE dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len);
