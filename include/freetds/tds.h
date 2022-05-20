@@ -1347,7 +1347,7 @@ typedef struct tds_table_value
 	TDS_INT num_cols;
 	TDS_INT num_rows;
 	TDS_TABLE_VALUE_ROW * row;
-	TDS_TABLE_VALUE_METADATA * metadata; // TODO: may not need this
+	TDS_TABLE_VALUE_ROW * metadata;
 } TDS_TABLE_VALUE;
 
 void tds_free_socket(TDSSOCKET * tds);

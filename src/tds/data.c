@@ -1515,18 +1515,18 @@ tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 {
 	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
 	TDSCOLUMN *tds_col;
-	TDS_TABLE_VALUE_ROW * row;
-	TDS_TABLE_VALUE_METADATA * metadata;
+	TDS_TABLE_VALUE_ROW * row, * metadata_row;
 	int i;
 
 	/* TVP_COLMETADATA */
-	if (metadata == NULL)
+	if (table->metadata == NULL)
 		tds_put_smallint(tds, 0xffff); /* TVP_NULL_TOKEN */
 	else {
 		tds_put_smallint(tds, table->num_cols);
 		// TODO:
-		for (metadata = table->metadata, row = table->row, i = 0; i < table->num_cols; metadata = metadata->next, i++) {
-			tds_col = row->params->columns[i];
+		for (i = 0; i < table->num_cols; i++) {
+			metadata_row = table->metadata;
+			tds_col = metadata_row->params->columns[i];
 
 			/* UserType*/
 			tds_put_int(tds, tds_col->column_usertype);

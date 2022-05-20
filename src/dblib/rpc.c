@@ -541,6 +541,45 @@ convert_table(TDSSOCKET * tds, DBTABLEVALUE * table)
 	tds_table->num_cols = table->num_cols;
 	tds_table->row = NULL;
 
+	tds_table->metadata = tds_new(TDS_TABLE_VALUE_ROW, 1);
+	if (tds_table->metadata == NULL)
+		return NULL;
+	tds_table->metadata->params = NULL;
+	tds_table->metadata->next = NULL;
+
+	/**
+	 * Populate column metadata.
+	 * To do this, we create a dummy row of NULL values,
+	 * and use the built-in functions to determine the metadata.
+	 */
+	for (pcol = table->cols, i = 0; pcol != NULL; pcol = pcol->next, i++) {
+		params = tds_table->metadata->params;
+
+		if (!(new_params = tds_alloc_param_result(params))) {
+			tds_free_param_results(params);
+			tdsdump_log(TDS_DBG_ERROR, "param_list_to!");
+			return NULL;
+		}
+		params = new_params;
+
+		param_is_null = 1;
+		temp_type = pcol->type;
+		temp_value = NULL;
+		temp_datalen = is_fixed_type(temp_type) ? tds_get_size_by_type(temp_type) : 0;
+
+		ptdscol = params->columns[i];
+		tds_set_param_type(tds->conn, ptdscol, temp_type);
+
+		paramrow = param_row_alloc(params, ptdscol, i, temp_value, temp_datalen);
+		if (!paramrow) {
+			tds_free_param_results(params);
+			tdsdump_log(TDS_DBG_ERROR, "out of memory for rpc row!");
+			return NULL;
+		}
+
+		tds_table->metadata->params = params;
+	}
+
 	/* Keep a pointer to where the next row should be inserted, for easy access */
 	prow = &(tds_table->row);
 	for (i = 0; i < table->num_rows; i++) {
