@@ -1476,8 +1476,6 @@ tds_sybbigtime_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
 	return TDS_SUCCESS;
 }
 
-/* TODO */
-
 TDSRET
 tds_mstabletype_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
@@ -1503,8 +1501,7 @@ tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
 	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
 
-	tds_put_byte(tds, 0x00);
-	tds_put_string(tds, "", 0); /* Empty DB name */
+	tds_put_byte(tds, 0x00); /* Empty DB name */
 	tds_put_byte(tds, strlen(table->schema));
 	tds_put_string(tds, table->schema, -1);
 	tds_put_byte(tds, strlen(table->typename));
@@ -1523,23 +1520,26 @@ tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 	int i;
 
 	/* TVP_COLMETADATA */
-	tds_put_smallint(tds, table->num_cols);
-	// TODO:
-	for (metadata = table->metadata, row = table->row, i = 0; i < table->num_cols; metadata = metadata->next, i++) {
-		tds_col = row->params->columns[i];
-		// usertype - int (dummy val) TODO
-		tds_put_int(tds, tds_col->column_usertype);
-		// column flags - short TODO:
-		tds_put_smallint(tds, tds_col->column_flags);
+	if (metadata == NULL)
+		tds_put_smallint(tds, 0xffff); /* TVP_NULL_TOKEN */
+	else {
+		tds_put_smallint(tds, table->num_cols);
+		// TODO:
+		for (metadata = table->metadata, row = table->row, i = 0; i < table->num_cols; metadata = metadata->next, i++) {
+			tds_col = row->params->columns[i];
 
-		// type info - byte
-		tds_put_byte(tds, tds_col->on_server.column_type);
-		if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
-			return TDS_FAIL;
+			/* UserType*/
+			tds_put_int(tds, tds_col->column_usertype);
+			/* Flags */
+			tds_put_smallint(tds, tds_col->column_flags);
+			/* TYPE_INFO */
+			tds_put_byte(tds, tds_col->on_server.column_type);
+			if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
+				return TDS_FAIL;
 
-		// col name - string -- should be empty
-		tds_put_byte(tds, 0x00);
-		// tds_put_string(tds, metadata->name, strlen(metadata->name));
+			/* ColName - Empty string */
+			tds_put_byte(tds, 0x00);
+		}
 	}
 
 	/* TODO: Optional tokens? */
@@ -1567,8 +1567,6 @@ tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 
 	return TDS_SUCCESS;
 }
-
-/* END TODO*/
 
 TDSRET
 tds_invalid_get_info(TDSSOCKET * tds, TDSCOLUMN * col)

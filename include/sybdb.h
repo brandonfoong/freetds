@@ -396,7 +396,6 @@ typedef struct
 
 typedef struct dbtablevaluecol
 {
-	// TODO: Add metadata here
 	DBINT type;
 	char * name;
 	BYTE * values;
