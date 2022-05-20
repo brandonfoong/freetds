@@ -1897,14 +1897,14 @@ tds_realloc(void **pp, size_t new_size)
 	return p;
 }
 
-TABLE_VALUE *
+TDS_TABLE_VALUE *
 tds_alloc_table(char schema[], char typename[], int num_rows)
 {
-	TABLE_VALUE * table;
-	TABLE_ROW ** prow;
+	TDS_TABLE_VALUE * table;
+	TDS_TABLE_VALUE_ROW ** prow;
 	int i;
 
-	TEST_MALLOC(table, TABLE_VALUE);
+	TEST_MALLOC(table, TDS_TABLE_VALUE);
 
 	if ((table->schema = strdup(schema)) == NULL) {
 		// dbperror(dbproc, SYBEMEM, errno);
@@ -1920,7 +1920,7 @@ tds_alloc_table(char schema[], char typename[], int num_rows)
 
 	prow = &(table->row);
 	for (i = 0; i < num_rows; i++) {
-		*prow = malloc(sizeof(TABLE_ROW));
+		*prow = malloc(sizeof(TDS_TABLE_VALUE_ROW));
 		(*prow)->params = NULL;
 		(*prow)->next = NULL;
 

@@ -394,10 +394,29 @@ typedef struct
 } DBCOL2;
 /* end dbcolinfo stuff */
 
+typedef struct dbtablevaluecol
+{
+	// TODO: Add metadata here
+	DBINT type;
+	char * name;
+	BYTE * values;
+	DBINT * sizes;
+	struct dbtablevaluecol * next;
+} DBTABLEVALUECOL;
+
+typedef struct
+{
+	DBINT num_rows;
+	DBINT num_cols;
+	DBCHAR * schema;
+	DBCHAR * name;
+	DBTABLEVALUECOL * cols;
+} DBTABLEVALUE;
+
 #ifndef SYBDB_H
 #define SYBDB_H
 
-typedef struct TABLE_VALUE TABLE_VALUE;
+typedef struct tds_table_value TDS_TABLE_VALUE;
 
 #endif
 
@@ -906,8 +925,11 @@ void dbsetuserdata(DBPROCESS * dbproc, BYTE * ptr);
 RETCODE dbsetversion(DBINT version);
 
 /* TODO: */
-RETCODE dbrpcbindcolumn(DBPROCESS * dbproc, TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value);
-TABLE_VALUE * dbcreatetable(char schema[], char typename[], int num_rows);
+DBTABLEVALUE * dbcreatetablevalue(char schema[], char name[], int num_rows);
+RETCODE dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DBINT type, DBINT sizes[], BYTE * values);
+
+RETCODE dbrpcbindcolumn(DBPROCESS * dbproc, TDS_TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value);
+TDS_TABLE_VALUE * dbcreatetable(char schema[], char typename[], int num_rows);
 
 int dbspid(DBPROCESS * dbproc);
 RETCODE dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len);

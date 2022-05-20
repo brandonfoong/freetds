@@ -54,6 +54,7 @@ static void param_clear(DBREMOTE_PROC_PARAM * pparam);
 
 static TDSPARAMINFO *param_info_alloc(TDSSOCKET * tds, DBREMOTE_PROC * rpc);
 static const unsigned char * param_row_alloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *value, int size);
+static TDS_TABLE_VALUE * convert_table(TDSSOCKET * tds, DBTABLEVALUE * table);
 
 /**
  * \ingroup dblib_rpc
@@ -270,8 +271,8 @@ dbrpcparam(DBPROCESS * dbproc, const char paramname[], BYTE status, int db_type,
 }
 
 static RETCODE
-insert_values_into_table(TDSSOCKET * tds, TABLE_VALUE * table, const char paramname[], TDS_SERVER_TYPE type, DBINT datalen[], BYTE * value, DBINT num_cols) {
-	TABLE_ROW *row;
+insert_values_into_table(TDSSOCKET * tds, TDS_TABLE_VALUE * table, const char paramname[], TDS_SERVER_TYPE type, DBINT datalen[], BYTE * value, DBINT num_cols) {
+	TDS_TABLE_VALUE_ROW *row;
 
 	const unsigned char *prow;
 	int i;
@@ -282,10 +283,10 @@ insert_values_into_table(TDSSOCKET * tds, TABLE_VALUE * table, const char paramn
 	int temp_datalen;
 	TDS_SERVER_TYPE temp_type;
 	int param_is_null;
-	TABLE_METADATA * metadata;
-	TABLE_METADATA ** pmetadata;
+	TDS_TABLE_VALUE_METADATA * metadata;
+	TDS_TABLE_VALUE_METADATA ** pmetadata;
 
-	metadata = tds_new(TABLE_METADATA, 1);
+	metadata = tds_new(TDS_TABLE_VALUE_METADATA, 1);
 	metadata->usertype = 0x0;
 	metadata->flags = 0x0;
 	metadata->typeinfo = type;
@@ -386,7 +387,7 @@ insert_values_into_table(TDSSOCKET * tds, TABLE_VALUE * table, const char paramn
 
 
 RETCODE
-dbrpcbindcolumn(DBPROCESS * dbproc, TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value)
+dbrpcbindcolumn(DBPROCESS * dbproc, TDS_TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value)
 {
 	/* Not allowed to bind a table as the values of a table */
 	if (type == SYBTABLETYPE)
@@ -527,8 +528,11 @@ param_info_alloc(TDSSOCKET * tds, DBREMOTE_PROC * rpc)
 		 */
 		param_is_null = 0;
 		temp_type = p->type;
-		temp_value = p->value;
-		temp_datalen = p->datalen;
+		temp_value = p->type == SYBTABLETYPE ? (BYTE *) convert_table(tds, (DBTABLEVALUE *) p->value) : p->value;
+		temp_datalen = p->type == SYBTABLETYPE ? sizeof(TDS_TABLE_VALUE) : p->datalen;
+
+		if (p->type == SYBTABLETYPE)
+			free(p->value);
 
 		if (p->datalen == 0)
 			param_is_null = 1;
@@ -630,8 +634,195 @@ param_clear(DBREMOTE_PROC_PARAM * pparam)
 	}
 }
 
-TABLE_VALUE *
+TDS_TABLE_VALUE *
 dbcreatetable(char schema[], char typename[], int num_rows)
 {
 	return tds_alloc_table(schema, typename, num_rows);
+}
+
+// TODO: make sure that this works properly
+
+static TDS_TABLE_VALUE *
+convert_table(TDSSOCKET * tds, DBTABLEVALUE * table)
+{
+	TDS_TABLE_VALUE * tds_table;
+	TDS_TABLE_VALUE_ROW ** prow;
+	TDS_TABLE_VALUE_ROW * row;
+	int * offsets;
+	DBTABLEVALUECOL * pcol;
+	TDSPARAMINFO * params, * new_params;
+	int param_is_null;
+	TDS_SERVER_TYPE temp_type;
+	BYTE * temp_value;
+	int temp_datalen;
+	TDSCOLUMN * ptdscol;
+	const unsigned char *paramrow;
+	int i, j;
+
+	if (table == NULL)
+		return NULL;
+
+	/* Allocate a temp array to store the memory offsets of each column */
+	offsets = malloc(sizeof(int) * table->num_cols);
+	if (offsets == NULL)
+		return NULL;
+	memset(offsets, 0, sizeof(int) * table->num_cols);
+
+	tds_table = tds_new(TDS_TABLE_VALUE, 1); // TODO: can replace with TEST_MALLOC?
+	if (tds_table == NULL)
+		return NULL;
+
+	/* Populate table metadata */
+	tds_table->schema = table->schema;
+	tds_table->typename = table->name;
+	tds_table->num_rows = table->num_rows;
+	tds_table->num_cols = table->num_cols;
+	tds_table->row = NULL;
+
+	/* Keep a pointer to where the next row should be inserted, for easy access */
+	prow = &(tds_table->row);
+	for (i = 0; i < table->num_rows; i++) {
+		row = tds_new(TDS_TABLE_VALUE_ROW, 1);
+		if (row == NULL)
+			return NULL;
+
+		row->params = NULL;
+		row->next = NULL;
+
+		for (pcol = table->cols, j = 0; j < table->num_cols; j++, pcol = pcol->next) {
+			params = row->params;
+
+			if (!(new_params = tds_alloc_param_result(params))) {
+				tds_free_param_results(params);
+				tdsdump_log(TDS_DBG_ERROR, "param_list_to!");
+				return NULL;
+			}
+			params = new_params;
+
+			/*
+			* Determine whether an input parameter is NULL or not.
+			*/
+			param_is_null = 0;
+			temp_type = pcol->type;
+
+			/*
+			* If the incoming values point to an array of strings/char*, cast it to a BYTE** before dereferencing,
+			* else, the incoming values is an array of primitives, which does not need to be casted.
+			*/
+			temp_value = is_char_type(pcol->type) ? ((BYTE **) pcol->values)[i] : pcol->values + offsets[j];
+			temp_datalen = pcol->sizes[i];
+
+			offsets[j] += pcol->sizes[i];
+
+			if (pcol->sizes[i] == 0)
+				param_is_null = 1;
+
+			tdsdump_log(TDS_DBG_INFO1, "parm_info_alloc(): parameter null-ness = %d\n", param_is_null);
+
+			ptdscol = params->columns[j];
+
+			if (temp_value && is_numeric_type(temp_type)) {
+				DBDECIMAL *dec = (DBDECIMAL*) temp_value;
+				ptdscol->column_prec = dec->precision;
+				ptdscol->column_scale = dec->scale;
+				if (dec->precision > 0 && dec->precision <= MAXPRECISION)
+					temp_datalen = tds_numeric_bytes_per_prec[dec->precision] + 2;
+			}
+			if (param_is_null) {
+				if (param_is_null) {
+					temp_datalen = 0;
+					temp_value = NULL;
+				} else if (is_fixed_type(temp_type)) {
+					temp_datalen = tds_get_size_by_type(temp_type);
+				}
+				temp_type = tds_get_null_type(temp_type);
+			} else if (is_fixed_type(temp_type)) {
+				temp_datalen = tds_get_size_by_type(temp_type);
+			}
+
+			/* meta data */
+			if (pcol->name)
+				if (!tds_dstr_copy(&ptdscol->column_name, pcol->name)) {
+					tds_free_param_results(params);
+					tdsdump_log(TDS_DBG_ERROR, "out of rpc memory!");
+					return FAIL;
+				}
+
+			tds_set_param_type(tds->conn, ptdscol, temp_type);
+
+			if (is_fixed_type(pcol->type)) {
+				ptdscol->column_size = tds_get_size_by_type(pcol->type);
+			} else {
+				ptdscol->column_size = pcol->sizes[i];
+			}
+			if (pcol->type == XSYBNVARCHAR)
+				ptdscol->column_size *= 2;
+			ptdscol->on_server.column_size = ptdscol->column_size;
+
+			ptdscol->column_output = 0; /* Status value set to 0 - strictly only input param */
+			ptdscol->column_cur_size = temp_datalen;
+
+			paramrow = param_row_alloc(params, ptdscol, j, temp_value, temp_datalen);
+
+			if (!paramrow) {
+				tds_free_param_results(params);
+				tdsdump_log(TDS_DBG_ERROR, "out of memory for rpc row!");
+				return NULL;
+			}
+
+
+			row->params = params;
+		}
+		*prow = row;
+		prow = &(row->next);
+	}
+
+	/* Cleanup our temp array */
+	free(offsets);
+	return tds_table;
+}
+
+DBTABLEVALUE *
+dbcreatetablevalue(char schema[], char name[], int num_rows)
+{
+	DBTABLEVALUE * table;
+
+	table = tds_new(DBTABLEVALUE, 1);
+	if (table == NULL)
+		return NULL;
+
+	table->num_rows = num_rows;
+	table->num_cols = 0;
+	table->schema = schema;
+	table->name = name;
+	table->cols = NULL;
+
+	return table;
+}
+
+RETCODE
+dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DBINT type, DBINT sizes[], BYTE * values)
+{
+	DBTABLEVALUECOL * pcol;
+	DBTABLEVALUECOL ** ppcol;
+
+	/* Not allowed to bind table values into another table */
+	if (type == SYBTABLETYPE)
+		return FAIL;
+
+	pcol = tds_new(DBTABLEVALUECOL, 1);
+	if (pcol == NULL)
+		return FAIL;
+
+	pcol->type = type;
+	pcol->values = values;
+	pcol->sizes = sizes;
+	pcol->next = NULL;
+
+	for (ppcol = &(table->cols); *ppcol != NULL; ppcol = &((*ppcol)->next))
+		continue;
+
+	*ppcol = pcol;
+	table->num_cols++;
+	return SUCCEED;
 }

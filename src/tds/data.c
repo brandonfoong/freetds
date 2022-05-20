@@ -1489,7 +1489,7 @@ tds_mstabletype_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
 TDS_INT
 tds_mstabletype_row_len(TDSCOLUMN *col)
 {
-	return sizeof(TABLE_VALUE);
+	return sizeof(TDS_TABLE_VALUE);
 }
 
 TDSRET
@@ -1502,7 +1502,7 @@ tds_mstabletype_get(TDSSOCKET * tds, TDSCOLUMN * col)
 TDSRET
 tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
-	TABLE_VALUE * table = (TABLE_VALUE *) col->column_data;
+	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
 
 	tds_put_byte(tds, 0x00);
 	tds_put_string(tds, "", 0); /* Empty DB name */
@@ -1517,23 +1517,23 @@ tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 TDSRET
 tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
 {
-	TABLE_VALUE * table = (TABLE_VALUE *) col->column_data;
+	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
 	TDSCOLUMN *tds_col;
-	TABLE_ROW * row;
-	TABLE_METADATA * metadata;
+	TDS_TABLE_VALUE_ROW * row;
+	TDS_TABLE_VALUE_METADATA * metadata;
 	int i;
 
 	/* TVP_COLMETADATA */
 	tds_put_smallint(tds, table->num_cols);
 	// TODO:
-	for (metadata = table->metadata, row = table->row, i = 0; metadata != NULL; metadata = metadata->next, i++) {
+	for (metadata = table->metadata, row = table->row, i = 0; i < table->num_cols; metadata = metadata->next, i++) {
+		tds_col = row->params->columns[i];
 		// usertype - int (dummy val) TODO
-		tds_put_int(tds, metadata->usertype);
+		tds_put_int(tds, tds_col->column_usertype);
 		// column flags - short TODO:
-		tds_put_smallint(tds, metadata->flags);
+		tds_put_smallint(tds, tds_col->column_flags);
 
 		// type info - byte
-		tds_col = row->params->columns[i];
 		tds_put_byte(tds, tds_col->on_server.column_type);
 		if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
 			return TDS_FAIL;

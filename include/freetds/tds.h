@@ -1325,30 +1325,30 @@ TDSICONV *tds_iconv_from_collate(TDSCONNECTION * conn, TDS_UCHAR collate[5]);
 
 /* mem.c */
 
-typedef struct TABLE_METADATA
+typedef struct tds_table_value_metadata
 {
 	TDS_INT8 usertype;
 	TDS_SMALLINT flags;
 	TDS_CHAR typeinfo;
 	char * name;
-	struct TABLE_METADATA * next;
-} TABLE_METADATA;
+	struct tds_table_value_metadata * next;
+} TDS_TABLE_VALUE_METADATA;
 
-typedef struct TABLE_ROW
+typedef struct tds_table_value_row
 {
 	TDSPARAMINFO * params;
-	struct TABLE_ROW * next;
-} TABLE_ROW;
+	struct tds_table_value_row * next;
+} TDS_TABLE_VALUE_ROW;
 
-typedef struct TABLE_VALUE
+typedef struct tds_table_value
 {
 	char * schema;
 	char * typename;
 	TDS_INT num_cols;
 	TDS_INT num_rows;
-	TABLE_ROW * row;
-	TABLE_METADATA * metadata;
-} TABLE_VALUE;
+	TDS_TABLE_VALUE_ROW * row;
+	TDS_TABLE_VALUE_METADATA * metadata; // TODO: may not need this
+} TDS_TABLE_VALUE;
 
 void tds_free_socket(TDSSOCKET * tds);
 void tds_free_all_results(TDSSOCKET * tds);
@@ -1402,7 +1402,7 @@ TDSBCPINFO *tds_alloc_bcpinfo(void);
 void tds_free_bcpinfo(TDSBCPINFO *bcpinfo);
 void tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo);
 
-TABLE_VALUE *tds_alloc_table(char schema[], char typename[], int num_rows);
+TDS_TABLE_VALUE *tds_alloc_table(char schema[], char typename[], int num_rows);
 
 /* login.c */
 void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
