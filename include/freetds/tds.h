@@ -1325,15 +1325,6 @@ TDSICONV *tds_iconv_from_collate(TDSCONNECTION * conn, TDS_UCHAR collate[5]);
 
 /* mem.c */
 
-typedef struct tds_table_value_metadata
-{
-	TDS_INT8 usertype;
-	TDS_SMALLINT flags;
-	TDS_CHAR typeinfo;
-	char * name;
-	struct tds_table_value_metadata * next;
-} TDS_TABLE_VALUE_METADATA;
-
 typedef struct tds_table_value_row
 {
 	TDSPARAMINFO * params;
