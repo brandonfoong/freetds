@@ -928,9 +928,6 @@ RETCODE dbsetversion(DBINT version);
 DBTABLEVALUE * dbcreatetablevalue(char schema[], char name[], int num_rows);
 RETCODE dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DBINT type, DBINT sizes[], BYTE * values);
 
-RETCODE dbrpcbindcolumn(DBPROCESS * dbproc, TDS_TABLE_VALUE * table, const char paramname[], int type, DBINT datalen[], BYTE * value);
-TDS_TABLE_VALUE * dbcreatetable(char schema[], char typename[], int num_rows);
-
 int dbspid(DBPROCESS * dbproc);
 RETCODE dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len);
 DBINT dbspr1rowlen(DBPROCESS * dbproc);

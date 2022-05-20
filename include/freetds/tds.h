@@ -1402,8 +1402,6 @@ TDSBCPINFO *tds_alloc_bcpinfo(void);
 void tds_free_bcpinfo(TDSBCPINFO *bcpinfo);
 void tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo);
 
-TDS_TABLE_VALUE *tds_alloc_table(char schema[], char typename[], int num_rows);
-
 /* login.c */
 void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
 void tds_set_port(TDSLOGIN * tds_login, int port);

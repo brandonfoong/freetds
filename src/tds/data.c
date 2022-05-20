@@ -880,7 +880,6 @@ tds_generic_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 	CHECK_COLUMN_EXTRA(col);
 
 	size = tds_fix_column_size(tds, col);
-
 	switch (col->column_varint_size) {
 	case 0:
 		break;

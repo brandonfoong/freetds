@@ -1897,39 +1897,4 @@ tds_realloc(void **pp, size_t new_size)
 	return p;
 }
 
-TDS_TABLE_VALUE *
-tds_alloc_table(char schema[], char typename[], int num_rows)
-{
-	TDS_TABLE_VALUE * table;
-	TDS_TABLE_VALUE_ROW ** prow;
-	int i;
-
-	TEST_MALLOC(table, TDS_TABLE_VALUE);
-
-	if ((table->schema = strdup(schema)) == NULL) {
-		// dbperror(dbproc, SYBEMEM, errno);
-		return NULL;
-	}
-	if ((table->typename = strdup(typename)) == NULL) {
-		// dbperror(dbproc, SYBEMEM, errno);
-		return NULL;
-	}
-	table->num_cols = 0;
-	table->num_rows = num_rows;
-	table->row = NULL;
-
-	prow = &(table->row);
-	for (i = 0; i < num_rows; i++) {
-		*prow = malloc(sizeof(TDS_TABLE_VALUE_ROW));
-		(*prow)->params = NULL;
-		(*prow)->next = NULL;
-
-		prow = &((*prow)->next);
-	}
-	return table;
-
-	Cleanup:
-	return NULL;
-}
-
 /** @} */
