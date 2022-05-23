@@ -530,7 +530,7 @@ convert_table(TDSSOCKET * tds, DBTABLEVALUE * table)
 		return NULL;
 	memset(offsets, 0, sizeof(int) * table->num_cols);
 
-	tds_table = tds_new(TDS_TABLE_VALUE, 1); // TODO: can replace with TEST_MALLOC?
+	tds_table = tds_new(TDS_TABLE_VALUE, 1);
 	if (tds_table == NULL)
 		return NULL;
 
@@ -707,7 +707,7 @@ dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DB
 	DBTABLEVALUECOL * pcol;
 	DBTABLEVALUECOL ** ppcol;
 
-	/* Not allowed to bind table values into another table */
+	/* Not allowed to bind table values as the column of another table */
 	if (type == SYBTABLETYPE)
 		return FAIL;
 
@@ -720,6 +720,7 @@ dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DB
 	pcol->sizes = sizes;
 	pcol->next = NULL;
 
+	/* Traverse to the end of the linked list of columns, and add the new column there */
 	for (ppcol = &(table->cols); *ppcol != NULL; ppcol = &((*ppcol)->next))
 		continue;
 
