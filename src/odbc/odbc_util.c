@@ -841,6 +841,8 @@ odbc_sql_to_server_type(TDSCONNECTION * conn, int sql_type, int sql_unsigned)
 		return SYBVARBINARY;
 	case SQL_LONGVARBINARY:
 		return SYBIMAGE;
+	case SQL_SS_TABLE:
+		return SYBTABLETYPE;
 		/* TODO interval types */
 	default:
 		return TDS_INVALID_TYPE;
