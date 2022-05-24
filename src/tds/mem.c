@@ -1897,4 +1897,31 @@ tds_realloc(void **pp, size_t new_size)
 	return p;
 }
 
+TDS_TABLE_VALUE *
+tds_alloc_table(char schema[], char typename[], int num_rows)
+{
+	TDS_TABLE_VALUE * table;
+	int i;
+	TDS_TABLE_VALUE_ROW ** prow;
+
+	TEST_MALLOC(table, TDS_TABLE_VALUE);
+
+	table->schema = schema;
+	table->typename = typename;
+	table->num_cols = 0;
+	table->num_rows = num_rows;
+	table->row = NULL;
+	table->metadata = malloc(sizeof(TDS_TABLE_VALUE_ROW));
+
+	for (i = 0, prow = &table->row; i < num_rows; i++, prow = &(*prow)->next) {
+		*prow = malloc(sizeof(TDS_TABLE_VALUE_ROW));
+		(*prow)->params = NULL;
+		(*prow)->next = NULL;
+	}
+
+	return table;
+Cleanup:
+	return NULL;
+}
+
 /** @} */
