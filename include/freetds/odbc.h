@@ -431,6 +431,7 @@ struct _hstmt
 	TDS_ODBC_SPECIAL_ROWS special_row;
 	/* do NOT free cursor, free from socket or attach to connection */
 	TDSCURSOR *cursor;
+	SQLINTEGER focus;
 };
 
 typedef struct _henv TDS_ENV;
