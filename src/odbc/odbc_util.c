@@ -841,6 +841,8 @@ odbc_sql_to_server_type(TDSCONNECTION * conn, int sql_type, int sql_unsigned)
 		return SYBVARBINARY;
 	case SQL_LONGVARBINARY:
 		return SYBIMAGE;
+	case SQL_SS_TABLE:
+		return SYBTABLETYPE;
 		/* TODO interval types */
 	default:
 		return TDS_INVALID_TYPE;
@@ -940,6 +942,8 @@ odbc_get_param_len(const struct _drecord *drec_axd, const struct _drecord *drec_
 	TYPE_NORMAL(SQL_SS_VARIANT) \
 	TYPE_NORMAL(SQL_TYPE_DATE) \
 	TYPE_NORMAL(SQL_TYPE_TIME) \
+\
+	TYPE_NORMAL(SQL_SS_TABLE) \
 \
 	TYPE_VERBOSE_START(SQL_DATETIME) \
 	TYPE_VERBOSE_DATE(SQL_DATETIME, SQL_CODE_TIMESTAMP, SQL_TYPE_TIMESTAMP, SQL_TIMESTAMP) \

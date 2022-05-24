@@ -1477,6 +1477,98 @@ tds_sybbigtime_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
 }
 
 TDSRET
+tds_mstabletype_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	/* Table type is never an output variable */
+	return TDS_FAIL;
+}
+
+TDS_INT
+tds_mstabletype_row_len(TDSCOLUMN *col)
+{
+	return sizeof(TDS_TABLE_VALUE);
+}
+
+TDSRET
+tds_mstabletype_get(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	/* Table type is never an output variable */
+	return TDS_FAIL;
+}
+
+TDSRET
+tds_mstabletype_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
+{
+	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
+
+	tds_put_byte(tds, 0x00); /* Empty DB name */
+	tds_put_byte(tds, strlen(table->schema));
+	tds_put_string(tds, table->schema, -1);
+	tds_put_byte(tds, strlen(table->typename));
+	tds_put_string(tds, table->typename, -1);
+
+	return TDS_SUCCESS;
+}
+
+TDSRET
+tds_mstabletype_put(TDSSOCKET * tds, TDSCOLUMN * col, int bcp7)
+{
+	TDS_TABLE_VALUE * table = (TDS_TABLE_VALUE *) col->column_data;
+	TDSCOLUMN *tds_col;
+	TDS_TABLE_VALUE_ROW * row, * metadata_row;
+	int i;
+
+	/* TVP_COLMETADATA */
+	if (table->metadata == NULL)
+		tds_put_smallint(tds, 0xffff); /* TVP_NULL_TOKEN */
+	else {
+		tds_put_smallint(tds, table->num_cols);
+		// TODO:
+		for (i = 0; i < table->num_cols; i++) {
+			metadata_row = table->metadata;
+			tds_col = metadata_row->params->columns[i];
+
+			/* UserType*/
+			tds_put_int(tds, tds_col->column_usertype);
+			/* Flags */
+			tds_put_smallint(tds, tds_col->column_flags);
+			/* TYPE_INFO */
+			tds_put_byte(tds, tds_col->on_server.column_type);
+			if (tds_col->funcs->put_info(tds, tds_col) == TDS_FAIL)
+				return TDS_FAIL;
+
+			/* ColName - Empty string */
+			tds_put_byte(tds, 0x00);
+		}
+	}
+
+	/* TODO: Optional tokens? */
+	/* TVP_ORDER_UNIQUE */
+	/* TVP_COLUMN_ORDERING */
+
+	/* TVP_END_TOKEN */
+	tds_put_byte(tds, 0x00);
+
+	/* TVP_ROW */
+	for (row = table->row; row != NULL; row = row->next) {
+		/* TVP_ROW_TOKEN */
+		tds_put_byte(tds, 0x01);
+
+		/* ROW INFORMATION */
+		for (i = 0; i < table->num_cols; i++) {
+			tds_col = row->params->columns[i];
+			if (tds_col->funcs->put_data(tds, tds_col, 0) == TDS_FAIL)
+				return TDS_FAIL;
+		}
+	}
+
+	/* TVP_END_TOKEN */
+	tds_put_byte(tds, 0x00);
+
+	return TDS_SUCCESS;
+}
+
+TDSRET
 tds_invalid_get_info(TDSSOCKET * tds, TDSCOLUMN * col)
 {
 	return TDS_FAIL;
@@ -1529,6 +1621,17 @@ tds_sybbigtime_check(const TDSCOLUMN *col)
 
 	return 1;
 }
+
+/* TODO */
+
+int
+tds_tabletype_check(const TDSCOLUMN *col)
+{
+	// TODO: is this for validating incoming data?
+	return 1;
+}
+
+/* END TODO */
 
 int
 tds_clrudt_check(const TDSCOLUMN *col)
@@ -1598,6 +1701,7 @@ TDS_DECLARE_FUNCS(msdatetime);
 TDS_DECLARE_FUNCS(clrudt);
 TDS_DECLARE_FUNCS(sybbigtime);
 TDS_DECLARE_FUNCS(invalid);
+TDS_DECLARE_FUNCS(mstabletype);
 #include <freetds/popvis.h>
 
 static const TDSCOLUMNFUNCS *
@@ -1621,6 +1725,8 @@ tds_get_column_funcs(TDSCONNECTION *conn, int type)
 	case SYB5BIGTIME:
 	case SYB5BIGDATETIME:
 		return &tds_sybbigtime_funcs;
+	case SYBTABLETYPE:
+		return &tds_mstabletype_funcs;
 	}
 	return &tds_generic_funcs;
 }

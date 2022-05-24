@@ -499,6 +499,7 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ixd, const struct _dre
 	default:
 	case SYBVOID:
 	case SYBVARIANT:
+	case SYBTABLETYPE:
 		/* TODO ODBC 3.5 */
 		assert(0);
 		res = -1;

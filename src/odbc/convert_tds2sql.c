@@ -247,6 +247,13 @@ odbc_convert_datetime_to_binary(TDS_STMT * stmt, TDSCOLUMN *curcol, int srctype,
 }
 
 static SQLLEN
+odbc_convert_tablevalue_to_binary(TDS_STMT * stmt, TDSCOLUMN *curcol, int srctype, TDS_TABLE_VALUE * src, TDS_CHAR * dest, SQLULEN destlen)
+{
+	// TODO:
+	return 0;
+}
+
+static SQLLEN
 odbc_convert_to_binary(TDS_STMT * stmt, TDSCOLUMN *curcol, int srctype, TDS_CHAR * src, TDS_UINT srclen, TDS_CHAR * dest, SQLULEN destlen)
 {
 	SQLLEN ret = srclen;
@@ -262,6 +269,8 @@ odbc_convert_to_binary(TDS_STMT * stmt, TDSCOLUMN *curcol, int srctype, TDS_CHAR
 	case SYB5BIGTIME:
 	case SYB5BIGDATETIME:
 		return odbc_convert_datetime_to_binary(stmt, curcol, srctype, (TDS_DATETIMEALL *) src, dest, destlen);
+	case SYBTABLETYPE:
+		return odbc_convert_tablevalue_to_binary(stmt, curcol, srctype, (TDS_TABLE_VALUE *) src, dest, destlen);
 	}
 
 	/* if destlen == 0 we return only length */

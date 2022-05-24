@@ -1324,6 +1324,23 @@ TDSICONV *tds_iconv_from_collate(TDSCONNECTION * conn, TDS_UCHAR collate[5]);
 
 
 /* mem.c */
+
+typedef struct tds_table_value_row
+{
+	TDSPARAMINFO * params;
+	struct tds_table_value_row * next;
+} TDS_TABLE_VALUE_ROW;
+
+typedef struct tds_table_value
+{
+	char * schema;
+	char * typename;
+	TDS_INT num_cols;
+	TDS_INT num_rows;
+	TDS_TABLE_VALUE_ROW * row;
+	TDS_TABLE_VALUE_ROW * metadata;
+} TDS_TABLE_VALUE;
+
 void tds_free_socket(TDSSOCKET * tds);
 void tds_free_all_results(TDSSOCKET * tds);
 void tds_free_results(TDSRESULTINFO * res_info);
@@ -1376,6 +1393,8 @@ TDSBCPINFO *tds_alloc_bcpinfo(void);
 void tds_free_bcpinfo(TDSBCPINFO *bcpinfo);
 void tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo);
 
+TDS_TABLE_VALUE *tds_alloc_table(char schema[], char typename[], int num_rows);
+// void tds_add_table_column(TDS_TABLE_VALUE * table, ...);
 
 /* login.c */
 void tds_set_packet(TDSLOGIN * tds_login, int packet_size);

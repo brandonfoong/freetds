@@ -1405,7 +1405,8 @@ _SQLBindParameter(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fParamType, SQL
 	TDS_DESC *apd, *ipd;
 	struct _drecord *drec;
 	SQLSMALLINT orig_apd_size, orig_ipd_size;
-	int is_numeric = 0;
+	int is_numeric = 0, tvp_name_len;
+	char * tvp_name, * schema, * typename, * pch;
 
 	ODBC_ENTER_HSTMT;
 
@@ -1476,6 +1477,34 @@ _SQLBindParameter(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fParamType, SQL
 	drec->sql_desc_indicator_ptr = pcbValue;
 	drec->sql_desc_octet_length_ptr = pcbValue;
 	drec->sql_desc_data_ptr = (char *) rgbValue;
+
+	/* Handle SQL_SS_TABLE */
+	if (fSqlType == SQL_SS_TABLE) {
+		tvp_name_len = cbValueMax == SQL_NTS ? strlen((char *) rgbValue) : cbValueMax;
+		tvp_name = malloc(tvp_name_len + 1);
+		strncpy(tvp_name, (char *) rgbValue, tvp_name_len);
+		tvp_name[tvp_name_len] = '\0';
+
+		/* Split tvp_name into the schema and typename */
+		if ((pch = strchr(tvp_name, '.')) == NULL) {
+			schema = "";
+			typename = tvp_name;
+		} else {
+			*pch = '\0';
+			schema = tvp_name;
+			typename = ++pch;
+		}
+
+		/* Typename contains '.', which is invalid */
+		if ((pch = strchr(typename, '.')) != NULL) {
+
+		}
+
+		drec->sql_desc_data_ptr = (char *) tds_alloc_table(schema, typename, cbColDef);
+		if (drec->sql_desc_data_ptr == NULL) {
+			ODBC_EXIT_(stmt);
+		}
+	}
 
 	/* field IPD related fields */
 	ipd = stmt->ipd;
@@ -6708,6 +6737,12 @@ _SQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLIN
 			odbc_errs_add(&stmt->errs, "HY001", NULL);
 			break;
 		}
+		break;
+	case SQL_SOPT_SS_PARAM_FOCUS:
+		// TODO: bounds check, correct return value
+		if (stmt->ipd->records[*((SQLINTEGER *) ValuePtr) - 1].sql_desc_concise_type != SQL_SS_TABLE)
+			return SQL_ERROR;
+		stmt->focus = *((SQLINTEGER *) ValuePtr);
 		break;
 	default:
 		odbc_errs_add(&stmt->errs, "HY092", NULL);

@@ -224,6 +224,8 @@ enum
 #define SYBMSDATETIME2 SYBMSDATETIME2
 	SYBMSDATETIMEOFFSET = 43, /* 0x2B */
 #define SYBMSDATETIMEOFFSET SYBMSDATETIMEOFFSET
+	SYBTABLETYPE = 243, /* 0xF3 */
+#define SYBTABLETYPE SYBTABLETYPE
 };
 
 #define SYBAOPCNT  0x4b
@@ -392,7 +394,30 @@ typedef struct
 } DBCOL2;
 /* end dbcolinfo stuff */
 
+typedef struct dbtablevaluecol
+{
+	DBINT type;
+	char * name;
+	BYTE * values;
+	DBINT * sizes;
+	struct dbtablevaluecol * next;
+} DBTABLEVALUECOL;
 
+typedef struct
+{
+	DBINT num_rows;
+	DBINT num_cols;
+	DBCHAR * schema;
+	DBCHAR * name;
+	DBTABLEVALUECOL * cols;
+} DBTABLEVALUE;
+
+#ifndef SYBDB_H
+#define SYBDB_H
+
+typedef struct tds_table_value TDS_TABLE_VALUE;
+
+#endif
 
 /* a large list of options, DBTEXTSIZE is needed by sybtcl */
 #define DBPARSEONLY      0
@@ -897,6 +922,10 @@ STATUS dbsetrow(DBPROCESS * dbprocess, DBINT row);
 RETCODE dbsettime(int seconds);
 void dbsetuserdata(DBPROCESS * dbproc, BYTE * ptr);
 RETCODE dbsetversion(DBINT version);
+
+/* TODO: */
+DBTABLEVALUE * dbcreatetablevalue(char schema[], char name[], int num_rows);
+RETCODE dbbindtablecolumn(DBPROCESS * dbproc, DBTABLEVALUE * table, char paramname[], DBINT type, DBINT sizes[], BYTE * values);
 
 int dbspid(DBPROCESS * dbproc);
 RETCODE dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len);
