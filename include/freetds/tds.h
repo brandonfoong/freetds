@@ -1456,6 +1456,21 @@ TDSRET tds_process_tokens(TDSSOCKET * tds, /*@out@*/ TDS_INT * result_type, /*@o
 
 
 /* data.c */
+typedef struct tds_tvp_row
+{
+	TDSPARAMINFO * params;
+	struct tds_tvp_row * next;
+} TDS_TVP_ROW;
+
+typedef struct tds_tvp
+{
+	char * schema;
+	char * name;
+	int num_cols;
+	TDS_TVP_ROW * metadata;
+	TDS_TVP_ROW * row;
+} TDS_TVP;
+
 void tds_set_param_type(TDSCONNECTION * conn, TDSCOLUMN * curcol, TDS_SERVER_TYPE type);
 void tds_set_column_type(TDSCONNECTION * conn, TDSCOLUMN * curcol, TDS_SERVER_TYPE type);
 #ifdef WORDS_BIGENDIAN
@@ -1668,6 +1683,14 @@ enum tds_bcp_directions
 	TDS_BCP_QUERYOUT = 3
 };
 
+typedef struct tds5_colinfo
+{
+	TDS_TINYINT type;
+	TDS_TINYINT status;
+	TDS_SMALLINT offset;
+	TDS_INT length;
+} TDS5COLINFO;
+
 struct tds_bcpinfo
 {
 	const char *hint;
@@ -1679,6 +1702,8 @@ struct tds_bcpinfo
 	TDS_INT xfer_init;
 	TDS_INT bind_count;
 	TDSRESULTINFO *bindinfo;
+	TDS5COLINFO *sybase_colinfo;
+	TDS_INT sybase_count;
 };
 
 TDSRET tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo);
